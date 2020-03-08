@@ -294,9 +294,9 @@ namespace LearnEFWebApp.Controllers
 
         public string DeleteBookNative(int id)
         {
-            //int rowCount = libraryContext;
+            int rowCount = libraryContext.Database.ExecuteSqlInterpolated($"delete from Books where id={id}");
 
-            return string.Empty;
+            return $"{rowCount} book(s) deleted";
         }
     }
 }
