@@ -1,0 +1,76 @@
+﻿{
+  "authors": [
+    {
+      "id": 1,
+      "name": "Nielsen Fisher"
+    },
+    {
+      "id": 2,
+      "name": "David Jarvis"
+    },
+    {
+      "id": 3,
+      "name": "Neva Caldwell"
+    },
+    {
+      "id": 4,
+      "name": "Flores Kennedy"
+    },
+    {
+      "id": 5,
+      "name": "Rene Bell"
+    },
+    {
+      "id": 6,
+      "name": "Marci Merritt"
+    },
+    {
+      "id": 7,
+      "name": "Olive Leonard"
+    }
+  ],
+  "books": [
+    {
+      "id": 1,
+      "title": "laboris consectetur consequat",
+      "description": "cupidatat consequat quis sint cillum sit laborum ad aliqua dolore",
+      "authorId": 2
+    },
+    {
+      "id": 2,
+      "title": "excepteur sunt magna",
+      "description": "adipisicing voluptate proident mollit magna aliqua officia eu aliquip laboris",
+      "authorId": 5
+    },
+    {
+      "id": 3,
+      "title": "quis enim non",
+      "description": "veniam commodo sint in id enim dolor sit ea do",
+      "authorId": 1
+    },
+    {
+      "id": 4,
+      "title": "voluptate fugiat culpa laboris",
+      "description": "irure reprehenderit consectetur dolore pariatur voluptate do officia sunt reprehenderit",
+      "authorId": 7
+    },
+    {
+      "id": 5,
+      "title": "ad ea excepteur dolor dolor",
+      "description": "deserunt ut nulla sint sint elit incididunt laborum do id",
+      "authorId": 6
+    },
+    {
+      "id": 6,
+      "title": "labore velit non sunt",
+      "description": "nisi nostrud labore anim fugiat voluptate cupidatat dolore ea sunt",
+      "authorId": 1
+    },
+    {
+      "id": 7,
+      "title": "deserunt velit ea quis non",
+      "description": "nostrud esse eiusmod sint tempor quis incididunt nulla quis nostrud",
+      "authorId": 6
+    }
+  ]
+}
