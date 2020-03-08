@@ -1,9 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Data.Common;
 using System.Data.SqlClient;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Security.AccessControl;
+using System.Text;
 using System.Threading.Tasks;
 using LearnEFWebApp.Data;
 using Microsoft.AspNetCore.Mvc;
@@ -297,6 +300,23 @@ namespace LearnEFWebApp.Controllers
             int rowCount = libraryContext.Database.ExecuteSqlInterpolated($"delete from Books where id={id}");
 
             return $"{rowCount} book(s) deleted";
+        }
+        
+        public string ReadBookTitles()
+        {
+            // demo ADO
+            using DbConnection connection = libraryContext.Database.GetDbConnection();
+            connection.Open();
+            DbCommand command = connection.CreateCommand();
+            command.CommandText = "select Title from Books";
+            DbDataReader reader = command.ExecuteReader();
+            StringBuilder builder = new StringBuilder();
+            while (reader.Read())
+            {
+                builder.AppendLine(reader.GetString(0));
+            }
+
+            return builder.ToString();
         }
     }
 }
