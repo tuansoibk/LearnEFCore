@@ -1,15 +1,11 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 using LearnEFWebApp.Data;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.HttpsPolicy;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 
 namespace LearnEFWebApp
 {
@@ -25,7 +21,11 @@ namespace LearnEFWebApp
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
-            services.AddDbContext<LibraryContext>(options => options.UseSqlite(Configuration.GetConnectionString("LibraryDemo")));
+            //services.AddDbContext<LibraryContext>(options => options.UseSqlite(Configuration.GetConnectionString("LibraryDemo")));
+            services.AddDbContext<LibraryContext>(options => options
+                .UseLazyLoadingProxies()
+                .UseLoggerFactory(LoggerFactory.Create(builder => builder.AddConsole()))
+                .UseSqlServer(Configuration.GetConnectionString("LibraryDemoSql")));
             services.AddControllersWithViews();
         }
 

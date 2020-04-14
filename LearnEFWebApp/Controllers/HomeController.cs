@@ -1,20 +1,12 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Data.Common;
-using System.Data.SqlClient;
-using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using System.Security.AccessControl;
 using System.Text;
-using System.Threading.Tasks;
 using LearnEFWebApp.Data;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Logging;
 using LearnEFWebApp.Models;
-using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Diagnostics;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
@@ -22,6 +14,8 @@ namespace LearnEFWebApp.Controllers
 {
     public class HomeController : Controller
     {
+        private const string DefaultSchemaName = "dbo";
+        
         private static readonly JsonSerializerSettings JsonSerializerSettings = new JsonSerializerSettings
         {
             ReferenceLoopHandling = ReferenceLoopHandling.Ignore
@@ -49,25 +43,51 @@ namespace LearnEFWebApp.Controllers
                 dynamic initData =
                     JsonConvert.DeserializeObject(
                         ReadFile("initdata.json"));
+                SetIndentityInsert<Author>(true);
                 foreach (JObject jObject in initData.authors)
                 {
                     var author = jObject.ToObject<Author>();
                     libraryContext.Add(author);
                 }
+                libraryContext.SaveChanges();
+                SetIndentityInsert<Author>(false);
 
+                SetIndentityInsert<Book>(true);
                 foreach (JObject jObject in initData.books)
                 {
                     var book = jObject.ToObject<Book>();
                     libraryContext.Add(book);
                 }
-
                 libraryContext.SaveChanges();
+                SetIndentityInsert<Book>(false);
+
                 return "Done";
             }
             catch (Exception e)
             {
                 return e.Message;
             }
+        }
+
+        private void SetIndentityInsert<T>(bool on)
+        {
+            if (!libraryContext.Database.IsSqlServer())
+            {
+                return;
+            }
+            
+            libraryContext.Database.OpenConnection();
+            string command = string.Format("SET IDENTITY_INSERT {0} {1}", GetTableFullName<T>(), @on ? "ON" : "OFF");
+            libraryContext.Database.ExecuteSqlRaw(command);
+            libraryContext.SaveChanges();
+        }
+
+        private string GetTableFullName<T>()
+        {
+            var entityType = libraryContext.Model.FindEntityType(typeof(T));
+            var tableName = entityType.GetTableName();
+
+            return DefaultSchemaName + "." + tableName;
         }
 
         private static string ReadFile(string fileName)
@@ -118,7 +138,7 @@ namespace LearnEFWebApp.Controllers
         public string ReadBooks()
         {
             var books = libraryContext.Books.Include(b => b.Author).AsNoTracking();
-            return JsonConvert.SerializeObject(books, Formatting.Indented, JsonSerializerSettings);
+            return SerializeObject(books);
         }
 
         public string ReadBook(int id)
@@ -129,13 +149,13 @@ namespace LearnEFWebApp.Controllers
             }
 
             var book = libraryContext.Books.Include(b => b.Author).AsNoTracking().FirstOrDefault(b => b.Id == id);
-            return JsonConvert.SerializeObject(book, Formatting.Indented, JsonSerializerSettings);
+            return SerializeObject(book);
         }
 
         public string ReadAuthors()
         {
             var authors = libraryContext.Authors.Include(a => a.Books).AsNoTracking();
-            return JsonConvert.SerializeObject(authors, Formatting.Indented, JsonSerializerSettings);
+            return SerializeObject(authors);
         }
 
         public string ReadAuthor(int? id)
@@ -146,7 +166,7 @@ namespace LearnEFWebApp.Controllers
             }
 
             var author = libraryContext.Authors.Include(a => a.Books).AsNoTracking().FirstOrDefault(a => a.Id == id);
-            return JsonConvert.SerializeObject(author, Formatting.Indented, JsonSerializerSettings);
+            return SerializeObject(author);
         }
 
         public string UpdateBook(int bookId, Book newBook)
@@ -246,7 +266,7 @@ namespace LearnEFWebApp.Controllers
             }
             // else: sort by id by default
 
-            return JsonConvert.SerializeObject(books, Formatting.Indented, JsonSerializerSettings);
+            return SerializeObject(books);
         }
         
         public string FindBooks(string fieldName, string value)
@@ -272,7 +292,7 @@ namespace LearnEFWebApp.Controllers
                 books = books.Where(b => b.Id == int.Parse(value));
             }
 
-            return JsonConvert.SerializeObject(books, Formatting.Indented, JsonSerializerSettings);
+            return SerializeObject(books);
         }
 
         public string ReadBookNative(int id)
@@ -292,7 +312,7 @@ namespace LearnEFWebApp.Controllers
                 // libraryContext.Entry(book.Author).Reload(); --> yeild ArgumentNullException as book.Author = null
             }
 
-            return JsonConvert.SerializeObject(books, Formatting.Indented, JsonSerializerSettings);
+            return SerializeObject(books);
         }
 
         public string DeleteBookNative(int id)
@@ -317,6 +337,23 @@ namespace LearnEFWebApp.Controllers
             }
 
             return builder.ToString();
+        }
+
+        public string TestLazyLoading(int bookId)
+        {
+            var book = libraryContext.Books.Find(bookId);
+            Console.WriteLine("load author");
+            //libraryContext.Entry(book).Reference(b => b.Author).Load();
+            var author = book.Author;
+            Console.WriteLine("finish load author");
+            //return SerializeObject(book);
+            //return SerializeObject(book) + "\r\n----------------------\r\n" + SerializeObject(author);
+            return book + "\r\n----------------------\r\n" + author;
+        }
+
+        private string SerializeObject(object obj)
+        {
+            return JsonConvert.SerializeObject(obj, Formatting.Indented, JsonSerializerSettings);
         }
     }
 }
