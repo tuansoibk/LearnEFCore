@@ -137,7 +137,9 @@ namespace LearnEFWebApp.Controllers
 
         public string ReadBooks()
         {
-            var books = libraryContext.Books.Include(b => b.Author).AsNoTracking();
+            var books = libraryContext.Books
+                .Include(b => b.Author)
+                .AsNoTracking();
             return SerializeObject(books);
         }
 
@@ -341,14 +343,73 @@ namespace LearnEFWebApp.Controllers
 
         public string TestLazyLoading(int bookId)
         {
-            var book = libraryContext.Books.Find(bookId);
-            Console.WriteLine("load author");
+            //var book = libraryContext.Books.Find(bookId);
+            
+            // eager loading
+            var book = libraryContext.Books.Include(b => b.Author).First(b => b.Id == bookId);
+            
+            // explicit load
             //libraryContext.Entry(book).Reference(b => b.Author).Load();
+            
+            // lazy load by reference
             var author = book.Author;
-            Console.WriteLine("finish load author");
-            //return SerializeObject(book);
+            
+            // this statement will load reference entities of given book & author
             //return SerializeObject(book) + "\r\n----------------------\r\n" + SerializeObject(author);
+            
+            // this statement will not load reference entity
             return book + "\r\n----------------------\r\n" + author;
+        }
+
+        public string TestSave(int bookId)
+        {
+            var book = libraryContext.Books.Find(bookId);
+            book.Title += DateTime.Now.ToString().Last();
+            book.Author.Address += DateTime.Now.ToString().Last();
+            // SaveChanges must be called for tracked entity
+            libraryContext.SaveChanges();
+
+            return book.Title  + "\r\n----------------------\r\n" + book.Author.Address;
+        }
+        
+        public string TestSaveOfNoTracking(int bookId)
+        {
+            var book = libraryContext.Books.AsNoTracking().First(b => b.Id == bookId);
+            book.Title += DateTime.Now.ToString().Last();
+
+            // lazy loading is not supported for detached entity
+            //var author = book.Author;
+
+            // setting entity state == attach the entity again
+            libraryContext.Entry(book).State = EntityState.Modified;
+            //var author = book.Author;
+            
+            // setting entity entry current value doesn't attach the entity again
+            // --> can't use lazy loading afterward
+            // --> can't save the value as well
+            // have to load the entity again and SetValues
+            // var book1 = libraryContext.Books.Find(bookId);
+            // libraryContext.Entry(book1).CurrentValues.SetValues(book);
+
+            libraryContext.SaveChanges();
+
+            return book.Title + "\r\n----------------------\r\n";
+        }
+        
+        public string TestSaveFakeBook(int bookId)
+        {
+            var book = new Book
+            {
+                Id = bookId,
+                Title = DateTime.Now.ToString(),
+                AuthorId = 2
+            };
+
+            // new entity object can still be attached & saved by setting entity state
+            libraryContext.Entry(book).State = EntityState.Modified;
+            libraryContext.SaveChanges();
+
+            return book.Title;
         }
 
         private string SerializeObject(object obj)
