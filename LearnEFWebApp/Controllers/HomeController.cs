@@ -412,6 +412,55 @@ namespace LearnEFWebApp.Controllers
             return book.Title;
         }
 
+        public string TestSaveWithTransaction(int bookId)
+        {
+            using (var transaction = libraryContext.Database.BeginTransaction())
+            {
+                var book = libraryContext.Books.Find(bookId);
+                book.Title += DateTime.Now.ToString().Last();
+
+                // SaveChanges must be called even in a transaction
+                Console.WriteLine("SaveChanges() is about to be invoked");
+                libraryContext.SaveChanges();
+                Console.WriteLine("SaveChanges() invoked");
+                book.Author.Address += DateTime.Now.ToString().Last();
+                Console.WriteLine("Commit() is about to be invoked");
+                // changes will only be persisted once Commit() is invoked
+                transaction.Commit();
+                Console.WriteLine("Commit() invoked");
+            }
+            
+            var book2 = libraryContext.Books.Find(bookId);
+
+            return book2.Title  + "\r\n----------------------\r\n" + book2.Author.Address;
+        }
+        
+        public string TestSaveWithTransactionRollBack(int bookId)
+        {
+            using (var transaction = libraryContext.Database.BeginTransaction())
+            {
+                try
+                {
+                    var book = libraryContext.Books.Find(bookId);
+                    book.Title += DateTime.Now.ToString().Last();
+
+                    // SaveChanges must be called even in a transaction
+                    Console.WriteLine("SaveChanges() is about to be invoked");
+                    libraryContext.SaveChanges();
+                    Console.WriteLine("SaveChanges() invoked");
+                    throw new Exception("test");
+                }
+                catch (Exception e)
+                {
+                    transaction.Rollback();
+                }
+            }
+            
+            var book2 = libraryContext.Books.Find(bookId);
+
+            return book2.Title  + "\r\n----------------------\r\n" + book2.Author.Address;
+        }
+
         private string SerializeObject(object obj)
         {
             return JsonConvert.SerializeObject(obj, Formatting.Indented, JsonSerializerSettings);
