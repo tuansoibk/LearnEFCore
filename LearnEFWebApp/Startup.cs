@@ -1,3 +1,5 @@
+using System;
+using LearnEFWebApp.Controllers;
 using LearnEFWebApp.Data;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
@@ -22,10 +24,19 @@ namespace LearnEFWebApp
         public void ConfigureServices(IServiceCollection services)
         {
             //services.AddDbContext<LibraryContext>(options => options.UseSqlite(Configuration.GetConnectionString("LibraryDemo")));
-            services.AddDbContext<LibraryContext>(options => options
-                .UseLazyLoadingProxies()
-                .UseLoggerFactory(LoggerFactory.Create(builder => builder.AddConsole()))
-                .UseSqlServer(Configuration.GetConnectionString("LibraryDemoSql")));
+            void OptionsBuilder(DbContextOptionsBuilder options) =>
+                options.UseLazyLoadingProxies()
+                    .UseLoggerFactory(LoggerFactory.Create(builder => builder.AddConsole().AddFilter((_, category, level) => category == "Microsoft.EntityFrameworkCore.Database.Command" && level == LogLevel.Information)))
+                    .UseSqlServer(Configuration.GetConnectionString("LibraryDemoSql"));
+
+            services.AddDbContext<LibraryContext>(OptionsBuilder);
+            DbContextOptionsBuilder<LibraryContext> optionsBuilder = new DbContextOptionsBuilder<LibraryContext>();
+            OptionsBuilder(optionsBuilder);
+            services.AddSingleton(optionsBuilder.Options);
+
+            services.AddScoped<ServiceA>();
+            services.AddScoped<ServiceB>();
+            
             services.AddControllersWithViews();
         }
 
@@ -55,6 +66,7 @@ namespace LearnEFWebApp
                 endpoints.MapControllerRoute(
                     name: "default",
                     pattern: "{controller=Home}/{action=Index}/{id?}");
+                endpoints.MapControllers();
             });
         }
     }
