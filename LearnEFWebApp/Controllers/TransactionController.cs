@@ -2,6 +2,7 @@
 using System.Linq;
 using System.Transactions;
 using LearnEFWebApp.Data;
+using LearnEFWebApp.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -10,10 +11,14 @@ namespace LearnEFWebApp.Controllers
     public class TransactionController : Controller
     {
         private readonly DbContextOptions<LibraryContext> options;
+        private readonly LibraryContext diLibraryContext;
+        private readonly MoapDbContext diMoapContext;
         
-        public TransactionController(DbContextOptions<LibraryContext> options)
+        public TransactionController(DbContextOptions<LibraryContext> options, LibraryContext libraryContext, MoapDbContext moapDbContext)
         {
             this.options = options;
+            diLibraryContext = libraryContext;
+            diMoapContext = moapDbContext;
         }
 
         private LibraryContext CreateContext()
@@ -268,6 +273,32 @@ namespace LearnEFWebApp.Controllers
             book.Description += DateTime.Now.Ticks.ToString().Last();
             libraryContext.SaveChanges();
             transaction.Commit();
+        }
+        
+        [Transactional(typeof(LibraryContext))]
+        public string TestTransactionalAttribute(int bookId)
+        {
+            var book = diLibraryContext.Books.Find(bookId);
+
+            book.Title += DateTime.Now.Ticks.ToString().Last();
+            
+            return book.Title + " ----------- " + book.Description;
+        }
+        
+        [Transactional(typeof(LibraryContext), typeof(MoapDbContext))]
+        public string TestTransactionalAttributeMultipleDb(int bookId)
+        {
+            var book = diLibraryContext.Books.Find(bookId);
+            book.Title += DateTime.Now.Ticks.ToString().Last();
+
+            var team = new Team
+            {
+                Name = "team" + DateTime.Now.Ticks.ToString().Substring(6)
+            };
+            diMoapContext.Database.EnsureCreated();
+            diMoapContext.Teams.Add(team);
+            
+            return book.Title + " ----------- " + book.Description;
         }
     }
 }

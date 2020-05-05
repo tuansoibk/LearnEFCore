@@ -24,15 +24,20 @@ namespace LearnEFWebApp
         public void ConfigureServices(IServiceCollection services)
         {
             //services.AddDbContext<LibraryContext>(options => options.UseSqlite(Configuration.GetConnectionString("LibraryDemo")));
-            void OptionsBuilder(DbContextOptionsBuilder options) =>
-                options.UseLazyLoadingProxies()
-                    .UseLoggerFactory(LoggerFactory.Create(builder => builder.AddConsole().AddFilter((_, category, level) => category == "Microsoft.EntityFrameworkCore.Database.Command" && level == LogLevel.Information)))
-                    .UseSqlServer(Configuration.GetConnectionString("LibraryDemoSql"));
 
-            services.AddDbContext<LibraryContext>(OptionsBuilder);
-            DbContextOptionsBuilder<LibraryContext> optionsBuilder = new DbContextOptionsBuilder<LibraryContext>();
-            OptionsBuilder(optionsBuilder);
+            services.AddDbContext<LibraryContext>(builder =>
+                builder.UseLazyLoadingProxies()
+                    .UseLoggerFactory(LoggerFactory.Create(builder => builder.AddConsole().AddFilter((_, category, level) => category == "Microsoft.EntityFrameworkCore.Database.Command" && level == LogLevel.Information)))
+                    .UseSqlServer(Configuration.GetConnectionString("LibraryDemoSql")));
+            
+            DbContextOptionsBuilder<LibraryContext> optionsBuilder = new DbContextOptionsBuilder<LibraryContext>()
+                .UseLazyLoadingProxies()
+                .UseLoggerFactory(LoggerFactory.Create(builder => builder.AddConsole().AddFilter((_, category, level) => category == "Microsoft.EntityFrameworkCore.Database.Command" && level == LogLevel.Information)))
+                .UseSqlServer(Configuration.GetConnectionString("LibraryDemoSql"));
             services.AddSingleton(optionsBuilder.Options);
+
+            services.AddDbContext<MoapDbContext>(builder =>
+                builder.UseSqlServer(Configuration.GetConnectionString("MoapDemoSql")));
 
             services.AddScoped<ServiceA>();
             services.AddScoped<ServiceB>();
@@ -68,6 +73,10 @@ namespace LearnEFWebApp
                     pattern: "{controller=Home}/{action=Index}/{id?}");
                 endpoints.MapControllers();
             });
+
+            using var serviceScope = app.ApplicationServices.CreateScope();
+            serviceScope.ServiceProvider.GetRequiredService<LibraryContext>().Database.EnsureCreated();
+            serviceScope.ServiceProvider.GetRequiredService<MoapDbContext>().Database.EnsureCreated();
         }
     }
 }

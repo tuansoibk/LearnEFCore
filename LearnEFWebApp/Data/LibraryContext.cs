@@ -5,7 +5,7 @@ namespace LearnEFWebApp.Data
 {
     public class LibraryContext : DbContext
     {
-        public LibraryContext(DbContextOptions options)
+        public LibraryContext(DbContextOptions<LibraryContext> options)
             : base(options)
         {
             // do nothing for now
