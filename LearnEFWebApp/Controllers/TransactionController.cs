@@ -180,5 +180,43 @@ namespace LearnEFWebApp.Controllers
             libraryContext.SaveChanges();
             transaction.Rollback();
         }
+        
+        public string TestMultipleContextsSameTransaction(int bookId)
+        {
+            var libraryContext = CreateContext();
+            using var transaction = new TransactionScope();
+            var book = libraryContext.Books.Find(bookId);
+
+            UpdateInSameTransaction(bookId);
+            book.Title += DateTime.Now.Ticks.ToString().Last();
+            libraryContext.SaveChanges();
+            transaction.Complete();
+            // change made in both contexts are persisted
+            
+            return book.Title + " ----------- " + book.Description;
+        }
+
+        private void UpdateInSameTransaction(int bookId)
+        {
+            var libraryContext = CreateContext();
+            var book = libraryContext.Books.Find(bookId);
+            book.Description += DateTime.Now.Ticks.ToString().Last();
+            libraryContext.SaveChanges();
+        }
+        
+        public string TestMultipleContextsSameTransactionRollback(int bookId)
+        {
+            var libraryContext = CreateContext();
+            using var transaction = new TransactionScope();
+            var book = libraryContext.Books.Find(bookId);
+
+            UpdateInSameTransaction(bookId);
+            book.Title += DateTime.Now.Ticks.ToString().Last();
+            libraryContext.SaveChanges();
+            // don't call transaction.Complete() to rollback change
+            // --> changes made in both contexts are rolled back
+            
+            return book.Title + " ----------- " + book.Description;
+        }
     }
 }
