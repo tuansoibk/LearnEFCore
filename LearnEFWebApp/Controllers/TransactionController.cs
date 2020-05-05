@@ -218,5 +218,30 @@ namespace LearnEFWebApp.Controllers
             
             return book.Title + " ----------- " + book.Description;
         }
+        
+        public string TestDifferentContextsSameTransaction(int bookId)
+        {
+            var libraryContext = CreateContext();
+            using var transaction = new TransactionScope();
+            var book = libraryContext.Books.Find(bookId);
+
+            UpdateInDifferentContextSameTransaction(bookId);
+            book.Title += DateTime.Now.Ticks.ToString().Last();
+            libraryContext.SaveChanges();
+            transaction.Complete();
+            
+            return book.Title + " ----------- " + book.Description;
+        }
+
+        private void UpdateInDifferentContextSameTransaction(in int bookId)
+        {
+            var builder = new DbContextOptionsBuilder<LibraryContext>()
+                .UseSqlServer("Server=(localdb)\\MSSQLLocalDB;Database=LibraryDemo2;");
+            var libraryContext = new LibraryContext(builder.Options);
+            var book = libraryContext.Books.Find(bookId);
+            // PlatformNotSupportedException: This platform does not support distributed transactions.
+            book.Description += DateTime.Now.Ticks.ToString().Last();
+            libraryContext.SaveChanges();
+        }
     }
 }
