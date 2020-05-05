@@ -243,5 +243,31 @@ namespace LearnEFWebApp.Controllers
             book.Description += DateTime.Now.Ticks.ToString().Last();
             libraryContext.SaveChanges();
         }
+        
+        public string TestDifferentContextsDifferentTransaction(int bookId)
+        {
+            var libraryContext = CreateContext();
+            using var transaction = libraryContext.Database.BeginTransaction();
+            var book = libraryContext.Books.Find(bookId);
+
+            UpdateInDifferentContextDifferentTransaction(bookId);
+            book.Title += DateTime.Now.Ticks.ToString().Last();
+            libraryContext.SaveChanges();
+            transaction.Commit();
+            
+            return book.Title + " ----------- " + book.Description;
+        }
+
+        private void UpdateInDifferentContextDifferentTransaction(in int bookId)
+        {
+            var builder = new DbContextOptionsBuilder<LibraryContext>()
+                .UseSqlServer("Server=(localdb)\\MSSQLLocalDB;Database=LibraryDemo2;");
+            var libraryContext = new LibraryContext(builder.Options);
+            using var transaction = libraryContext.Database.BeginTransaction();
+            var book = libraryContext.Books.Find(bookId);
+            book.Description += DateTime.Now.Ticks.ToString().Last();
+            libraryContext.SaveChanges();
+            transaction.Commit();
+        }
     }
 }
